@@ -120,7 +120,7 @@ async def credits(interaction: discord.Interaction):
     embed.add_field(name="👨‍💻 Lead Developer", value="kubxx", inline=True)
     embed.add_field(name="🛠️ Technologia", value="Python & Discord.py", inline=True)
     
-    embed.set_footer(text="Wszelkie prawa zastrzeżone © 2024 kubxx")
+    embed.set_footer(text="ᴡꜱᴢᴇʟᴋɪᴇ ᴘʀᴀᴡᴀ ᴢᴀꜱᴛʀᴢᴇᴢ̇ᴏɴᴇ © 𝟤𝟢𝟤𝟨 ᴋᴜʙxx")
     
     await interaction.response.send_message(embed=embed)
 
