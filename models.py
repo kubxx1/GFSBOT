@@ -2,18 +2,20 @@ import random
 from config import *
 
 class Player:
-    def __init__(self, name, ovr, position="MD"):
+    def __init__(self, name, ovr, position="MD", goals=0, assists=0):
         self.name = name
         self.base_ovr = int(ovr)
         self.ovr = int(ovr)
         self.position = position
         
-        # Dynamic stats
-        self.condition = 100.0  # Fatigue (0-100)
+        # Statystyki trwałe (zapisywane)
+        self.goals = goals
+        self.assists = assists
+        
+        # Statystyki meczowe (resetowane przy każdym meczu)
+        self.condition = 100.0
         self.rating = STARTING_RATING
-        self.confidence = 0  # -3 to +3
-        self.goals = 0
-        self.assists = 0
+        self.confidence = 0
         self.cards = 0
         self.is_sent_off = False
         
@@ -21,57 +23,76 @@ class Player:
         return {
             'name': self.name,
             'ovr': self.ovr,
-            'position': self.position
+            'position': self.position,
+            'goals': self.goals,
+            'assists': self.assists
         }
     
     @classmethod
     def from_dict(cls, data):
-        return cls(data['name'], data['ovr'], data['position'])
+        return cls(
+            name=data['name'], 
+            ovr=data['ovr'], 
+            position=data.get('position', 'MD'),
+            goals=data.get('goals', 0),
+            assists=data.get('assists', 0)
+        )
 
     def update_rating(self, amount):
         self.rating = max(1.0, min(10.0, self.rating + amount))
         
     def update_confidence(self, amount):
-        # GK doesn't use confidence logic normally, but we can track it mostly for outfield
         if self.position == "GK":
             return
         self.confidence = max(-3, min(3, self.confidence + amount))
 
     def get_effective_ovr(self):
-        # Formula: Base OVR + Confidence Impact - Fatigue Impact
         fatigue_penalty = (100 - self.condition) * 0.1
         confidence_bonus = self.confidence * 1.5
         return self.ovr + confidence_bonus - fatigue_penalty
 
 class Team:
-    def __init__(self, name, players, style=STYLE_BALANCED):
+    def __init__(self, name, players, style=STYLE_BALANCED, wins=0, losses=0, draws=0, matches_played=0, goals_scored=0):
         self.name = name
         self.players = players
         self.style = style
         self.momentum = STARTING_MOMENTUM
         self.score = 0
         
+        # --- NOWE POLA STATYSTYK ---
+        self.wins = wins
+        self.losses = losses
+        self.draws = draws
+        self.matches_played = matches_played
+        self.goals_scored = goals_scored
+        
     def to_dict(self):
         return {
             'name': self.name,
             'style': self.style,
-            'players': [p.to_dict() for p in self.players]
+            'players': [p.to_dict() for p in self.players],
+            # ZAPISUJEMY STATYSTYKI DO PLIKU:
+            'wins': self.wins,
+            'losses': self.losses,
+            'draws': self.draws,
+            'matches_played': self.matches_played,
+            'goals_scored': self.goals_scored
         }
     
     @classmethod
     def from_dict(cls, data):
         players = [Player.from_dict(p) for p in data['players']]
-        return cls(data['name'], players, data.get('style', STYLE_BALANCED))
-
-    def get_avg_ovr(self):
-        if not self.players:
-            return 0
-        return sum(p.ovr for p in self.players) / len(self.players)
-    
-    def update_momentum(self, amount):
-        # Cap change per update to avoid swinging too wildly
-        change = max(-MAX_MOMENTUM_CHANGE, min(MAX_MOMENTUM_CHANGE, amount))
-        self.momentum = max(0, min(100, self.momentum + change))
+        # ODCZYTUJEMY STATYSTYKI Z PLIKU (z zabezpieczeniem .get, jeśli ich jeszcze nie ma):
+        return cls(
+            data['name'], 
+            players, 
+            data.get('style', STYLE_BALANCED),
+            wins=data.get('wins', 0),
+            losses=data.get('losses', 0),
+            draws=data.get('draws', 0),
+            matches_played=data.get('matches_played', 0),
+            goals_scored=data.get('goals_scored', 0)
+        )
 
 class Match:
     def __init__(self, home_team, away_team, mode='live'):
