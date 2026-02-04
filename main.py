@@ -110,8 +110,8 @@ async def info_druzyna(interaction: discord.Interaction, nazwa: str):
 
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="autor", description="Informacje o twórcy bota")
-async def autor(interaction: discord.Interaction):
+@bot.tree.command(name="credits", description="Informacje o twórcy bota")
+async def credits(interaction: discord.Interaction):
     embed = discord.Embed(
         title="🚀 O projekcie GFS BOT",
         description="Zaawansowany system symulacji meczów i zarządzania statystykami piłkarskimi.",
