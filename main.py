@@ -73,14 +73,16 @@ async def stworz_druzyne(interaction: discord.Interaction, name: str, squad_text
 
 @bot.tree.command(name="info_druzyna", description="Pokazuje statystyki i skład drużyny")
 async def info_druzyna(interaction: discord.Interaction, nazwa: str):
-    if nazwa not in teams:
+    clean_name = nazwa.replace("<@&", "").replace(">", "").replace("@", "")
+    
+    team = teams.get(clean_name) or teams.get(nazwa)
+
+    if not team:
         await interaction.response.send_message(f"Nie znalazłem drużyny `{nazwa}`!", ephemeral=True)
         return
 
-    team = teams[nazwa]
-    
     embed = discord.Embed(
-        title=f"🛡️ Profil: {team.name}",
+        title=f"🛡️ Profil: {team.name}", 
         color=discord.Color.blue()
     )
     
@@ -104,36 +106,6 @@ async def info_druzyna(interaction: discord.Interaction, nazwa: str):
 
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="wynik", description="Zapisz wynik meczu dwóch drużyn")
-async def wynik(interaction: discord.Interaction, team1_name: str, gole1: int, team2_name: str, gole2: int):
-    if team1_name not in teams or team2_name not in teams:
-        await interaction.response.send_message("Jedna z drużyn nie istnieje!", ephemeral=True)
-        return
-
-    t1 = teams[team1_name]
-    t2 = teams[team2_name]
-
-    # Aktualizacja meczów i goli
-    for t, g in [(t1, gole1), (t2, gole2)]:
-        t.matches_played = getattr(t, 'matches_played', 0) + 1
-        t.goals_scored = getattr(t, 'goals_scored', 0) + g
-
-    # Kto wygrał?
-    if gole1 > gole2:
-        t1.wins = getattr(t1, 'wins', 0) + 1
-        t2.losses = getattr(t2, 'losses', 0) + 1
-        msg = f"Zwycięstwo **{t1.name}**!"
-    elif gole2 > gole1:
-        t2.wins = getattr(t2, 'wins', 0) + 1
-        t1.losses = getattr(t1, 'losses', 0) + 1
-        msg = f"Zwycięstwo **{t2.name}**!"
-    else:
-        t1.draws = getattr(t1, 'draws', 0) + 1
-        t2.draws = getattr(t2, 'draws', 0) + 1
-        msg = "Remis!"
-
-    save_teams()
-    await interaction.response.send_message(f"✅ Wynik zapisany: {t1.name} {gole1}:{gole2} {t2.name}. {msg}")
 
 @bot.tree.command(name="stworz_testowa_druzyne", description="Stwórz losową drużynę do testów")
 async def stworz_testowa_druzyne(interaction: discord.Interaction, name: str):
@@ -239,6 +211,27 @@ async def rozegraj_mecz(interaction: discord.Interaction, home_team: str, away_t
         embed.set_footer(text="Symulacja zakończona pomyślnie ⚽ | GFS | Globalna Federacja Symulacji")
         
         await channel.send(embed=embed)
+
+        h_team = teams[home_team]
+        a_team = teams[away_team]
+        
+        h_team.matches_played = getattr(h_team, 'matches_played', 0) + 1
+        a_team.matches_played = getattr(a_team, 'matches_played', 0) + 1
+        h_team.goals_scored = getattr(h_team, 'goals_scored', 0) + match.home_team.score
+        a_team.goals_scored = getattr(a_team, 'goals_scored', 0) + match.away_team.score
+
+        if match.home_team.score > match.away_team.score:
+            h_team.wins = getattr(h_team, 'wins', 0) + 1
+            a_team.losses = getattr(a_team, 'losses', 0) + 1
+        elif match.away_team.score > match.home_team.score:
+            a_team.wins = getattr(a_team, 'wins', 0) + 1
+            h_team.losses = getattr(h_team, 'losses', 0) + 1
+        else:
+            h_team.draws = getattr(h_team, 'draws', 0) + 1
+            a_team.draws = getattr(a_team, 'draws', 0) + 1
+
+        save_teams() 
+        await channel.send("📊 *Statystyki zostały pomyślnie zapisane w bazie danych.*")
         
         # Man of the Match - Złota karta
         motm_player = calculate_motm(home, away)
