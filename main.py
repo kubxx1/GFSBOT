@@ -9,7 +9,7 @@ from config import *
 import json
 
 # Database file
-TEAMS_DB = 'teams.json'
+TEAMS_DB = "/app/data/teams.json"
 
 # Pobieranie tokena bezpośrednio ze zmiennych środowiskowych (Railway)
 TOKEN = os.getenv("DISCORD_TOKEN")
