@@ -45,6 +45,10 @@ load_teams()
 
 @bot.event
 async def on_ready():
+    activity = discord.Activity(
+        type=discord.ActivityType.playing, 
+        name="Bot created by: kubxx"
+    )
     print(f'Logged in as {bot.user}')
     try:
         synced = await bot.tree.sync()
@@ -104,6 +108,20 @@ async def info_druzyna(interaction: discord.Interaction, nazwa: str):
     player_list = "\n".join([f"• {p.name} ({p.ovr})" for p in team.players[:10]]) # pierwsze 10 osób
     embed.add_field(name="👥 Skład (fragment)", value=player_list or "Brak zawodników", inline=False)
 
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="autor", description="Informacje o twórcy bota")
+async def autor(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="🚀 O projekcie GFS BOT",
+        description="Zaawansowany system symulacji meczów i zarządzania statystykami piłkarskimi.",
+        color=discord.Color.dark_red()
+    )
+    embed.add_field(name="👨‍💻 Lead Developer", value="kubxx", inline=True)
+    embed.add_field(name="🛠️ Technologia", value="Python & Discord.py", inline=True)
+    
+    embed.set_footer(text="Wszelkie prawa zastrzeżone © 2024 kubxx")
+    
     await interaction.response.send_message(embed=embed)
 
 
