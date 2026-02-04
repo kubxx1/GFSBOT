@@ -156,13 +156,13 @@ async def play_match(interaction: discord.Interaction, home_team: str, away_team
         
         embed.add_field(
             name="Wynik", 
-            value=f" {home.name} {match.home_team.score}⚽ : {match.away_team.score}⚽ {away.name}", 
+            value=f" {home.name} {match.home_team.score} : {match.away_team.score} {away.name}", 
             inline=False
         )
         
         # Dodajemy statystyki do pól pod spodem
-        embed.add_field(name="Gole ⚽ (Dom)", value=f"{match.home_team.score}", inline=True)
-        embed.add_field(name="Gole ⚽ (Wyjazd)", value=f"{match.away_team.score}", inline=True)
+        embed.add_field(name="Gole  (Dom) ⚽", value=f"{match.home_team.score}", inline=True)
+        embed.add_field(name="Gole  (Wyjazd)⚽", value=f"{match.away_team.score}", inline=True)
         
         embed.set_footer(text="Symulacja zakończona pomyślnie ⚽ | GFS | Globalna Federacja Symulacji")
         
