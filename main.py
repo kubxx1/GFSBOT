@@ -52,10 +52,18 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-@bot.tree.command(name="create_team", description="Stworz nowa druzyne z lista zawodnikow")
-async def create_team(interaction: discord.Interaction, name: str, squad_text: str):
+@bot.tree.command(name="stworz_druzyne", description="Stworz nowa druzyne z lista zawodnikow")
+async def stworz_druzyne(interaction: discord.Interaction, name: str, squad_text: str):
     players = parse_squad_text(squad_text)
     new_team = Team(name, players)
+    
+    new_team.wins = 0
+    new_team.losses = 0
+    new_team.draws = 0
+    new_team.matches_played = 0
+    new_team.goals_scored = 0
+
+
     teams[name] = new_team
     save_teams()
     
@@ -63,16 +71,80 @@ async def create_team(interaction: discord.Interaction, name: str, squad_text: s
     summary += f"Średni OVR: {new_team.get_avg_ovr():.1f}"
     await interaction.response.send_message(summary)
 
-@bot.tree.command(name="create_random_team", description="Stwórz losową drużynę do testów")
-async def create_random_team(interaction: discord.Interaction, name: str):
+@bot.tree.command(name="info_druzyna", description="Pokazuje statystyki i skład drużyny")
+async def info_druzyna(interaction: discord.Interaction, nazwa: str):
+    if nazwa not in teams:
+        await interaction.response.send_message(f"Nie znalazłem drużyny `{nazwa}`!", ephemeral=True)
+        return
+
+    team = teams[nazwa]
+    
+    embed = discord.Embed(
+        title=f"🛡️ Profil: {team.name}",
+        color=discord.Color.blue()
+    )
+    
+    # Statystyki (używamy .getattr, żeby nie wywaliło błędu przy starych drużynach)
+    wins = getattr(team, 'wins', 0)
+    losses = getattr(team, 'losses', 0)
+    draws = getattr(team, 'draws', 0)
+    matches = getattr(team, 'matches_played', 0)
+    goals = getattr(team, 'goals_scored', 0)
+    ovr = team.get_avg_ovr()
+
+    embed.add_field(name="🏆 Wygrane", value=str(wins), inline=True)
+    embed.add_field(name="🤝 Remisy", value=str(draws), inline=True)
+    embed.add_field(name="❌ Przegrane", value=str(losses), inline=True)
+    embed.add_field(name="⚽ Gole", value=str(goals), inline=True)
+    embed.add_field(name="🏟️ Mecze", value=str(matches), inline=True)
+    embed.add_field(name="⭐ Średni OVR", value=f"**{ovr:.1f}**", inline=False)
+    
+    player_list = "\n".join([f"• {p.name} ({p.ovr})" for p in team.players[:10]]) # pierwsze 10 osób
+    embed.add_field(name="👥 Skład (fragment)", value=player_list or "Brak zawodników", inline=False)
+
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="wynik", description="Zapisz wynik meczu dwóch drużyn")
+async def wynik(interaction: discord.Interaction, team1_name: str, gole1: int, team2_name: str, gole2: int):
+    if team1_name not in teams or team2_name not in teams:
+        await interaction.response.send_message("Jedna z drużyn nie istnieje!", ephemeral=True)
+        return
+
+    t1 = teams[team1_name]
+    t2 = teams[team2_name]
+
+    # Aktualizacja meczów i goli
+    for t, g in [(t1, gole1), (t2, gole2)]:
+        t.matches_played = getattr(t, 'matches_played', 0) + 1
+        t.goals_scored = getattr(t, 'goals_scored', 0) + g
+
+    # Kto wygrał?
+    if gole1 > gole2:
+        t1.wins = getattr(t1, 'wins', 0) + 1
+        t2.losses = getattr(t2, 'losses', 0) + 1
+        msg = f"Zwycięstwo **{t1.name}**!"
+    elif gole2 > gole1:
+        t2.wins = getattr(t2, 'wins', 0) + 1
+        t1.losses = getattr(t1, 'losses', 0) + 1
+        msg = f"Zwycięstwo **{t2.name}**!"
+    else:
+        t1.draws = getattr(t1, 'draws', 0) + 1
+        t2.draws = getattr(t2, 'draws', 0) + 1
+        msg = "Remis!"
+
+    save_teams()
+    await interaction.response.send_message(f"✅ Wynik zapisany: {t1.name} {gole1}:{gole2} {t2.name}. {msg}")
+
+@bot.tree.command(name="stworz_testowa_druzyne", description="Stwórz losową drużynę do testów")
+async def stworz_testowa_druzyne(interaction: discord.Interaction, name: str):
     players = generate_random_squad()
     new_team = Team(name, players)
     teams[name] = new_team
     save_teams()
     await interaction.response.send_message(f"Losowa drużyna **{name}** stworzona (Średni OVR: {new_team.get_avg_ovr():.1f}).")
 
-@bot.tree.command(name="delete_team", description="Usuń istniejącą drużynę")
-async def delete_team(interaction: discord.Interaction, name: str):
+@bot.tree.command(name="usun_druzyne", description="Usuń istniejącą drużynę")
+async def usun_druzyne(interaction: discord.Interaction, name: str):
     if name in teams:
         del teams[name]
         save_teams()
@@ -80,8 +152,8 @@ async def delete_team(interaction: discord.Interaction, name: str):
     else:
         await interaction.response.send_message(f"Nie znaleziono drużyny o nazwie **{name}**.", ephemeral=True)
 
-@bot.tree.command(name="edit_team", description="Edytuj skład istniejącej drużyny")
-async def edit_team(interaction: discord.Interaction, name: str, squad_text: str):
+@bot.tree.command(name="edytuj_druzyne", description="Edytuj skład istniejącej drużyny")
+async def edytuj_druzyne(interaction: discord.Interaction, name: str, squad_text: str):
     if name in teams:
         players = parse_squad_text(squad_text)
         teams[name].players = players
@@ -90,10 +162,10 @@ async def edit_team(interaction: discord.Interaction, name: str, squad_text: str
         summary += f"Nowy średni OVR: {teams[name].get_avg_ovr():.1f}"
         await interaction.response.send_message(summary)
     else:
-        await interaction.response.send_message(f"Nie znaleziono drużyny **{name}**. Użyj /create_team aby ją stworzyć.", ephemeral=True)
+        await interaction.response.send_message(f"Nie znaleziono drużyny **{name}**. Użyj /stworz_druzyne aby ją stworzyć.", ephemeral=True)
 
-@bot.tree.command(name="list_teams", description="Pokaż listę wszystkich drużyn")
-async def list_teams(interaction: discord.Interaction):
+@bot.tree.command(name="lista_druzyn", description="Pokaż listę wszystkich drużyn")
+async def lista_druzyn(interaction: discord.Interaction):
     if not teams:
         await interaction.response.send_message("Brak stworzonych drużyn.")
         return
@@ -103,10 +175,10 @@ async def list_teams(interaction: discord.Interaction):
         msg += f"- {name} (OVR: {team.get_avg_ovr():.1f}, {len(team.players)} zawodników)\n"
     await interaction.response.send_message(msg)
 
-@bot.tree.command(name="play_match", description="Rozpocznij mecz między dwiema drużynami")
-async def play_match(interaction: discord.Interaction, home_team: str, away_team: str, mode: str = "live"):
+@bot.tree.command(name="rozegraj_mecz", description="Rozpocznij mecz między dwiema drużynami")
+async def rozegraj_mecz(interaction: discord.Interaction, home_team: str, away_team: str, mode: str = "live"):
     if home_team not in teams or away_team not in teams:
-        await interaction.response.send_message("Jedna lub obie drużyny nie istnieją! Użyj najpierw /create_team.", ephemeral=True)
+        await interaction.response.send_message("Jedna lub obie drużyny nie istnieją! Użyj najpierw /stworz_druzyne.", ephemeral=True)
         return
 
     home = teams[home_team]
