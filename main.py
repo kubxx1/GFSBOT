@@ -156,7 +156,7 @@ async def play_match(interaction: discord.Interaction, home_team: str, away_team
         
         embed.add_field(
             name="Wynik", 
-            value=f"### {home.name} {match.home_team.score} : {match.away_team.score} {away.name}", 
+            value=f"# {home.name} {match.home_team.score} : {match.away_team.score} {away.name}", 
             inline=False
         )
         
