@@ -149,22 +149,22 @@ async def play_match(interaction: discord.Interaction, home_team: str, away_team
         
         # Match Ended - Profesjonalna karta wyniku (Embed)
         embed = discord.Embed(
-            title="🏟️ KONIEC MECZU!",
+            title="🏟️  KONIEC MECZU!",
             description=f"Starcie pomiędzy **{home.name}** a **{away.name}** dobiegło końca!",
             color=discord.Color.green()
         )
         
         embed.add_field(
             name="Wynik", 
-            value=f"# {home.name} {match.home_team.score} : {match.away_team.score} {away.name}", 
+            value=f" {home.name} {match.home_team.score}⚽ : {match.away_team.score}⚽ {away.name}", 
             inline=False
         )
         
         # Dodajemy statystyki do pól pod spodem
-        embed.add_field(name="Gole (Dom)", value=f"{match.home_team.score}", inline=True)
-        embed.add_field(name="Gole (Wyjazd)", value=f"{match.away_team.score}", inline=True)
+        embed.add_field(name="Gole ⚽ (Dom)", value=f"{match.home_team.score}", inline=True)
+        embed.add_field(name="Gole ⚽ (Wyjazd)", value=f"{match.away_team.score}", inline=True)
         
-        embed.set_footer(text="Symulacja zakończona pomyślnie ⚽ |")
+        embed.set_footer(text="Symulacja zakończona pomyślnie ⚽ | GFS | Globalna Federacja Symulacji")
         
         await channel.send(embed=embed)
         
