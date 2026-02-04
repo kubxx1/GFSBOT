@@ -9,7 +9,7 @@ from config import *
 import json
 
 # Database file
-TEAMS_DB = "/app/data/teams.json"
+BAZA_DRUZYN = "/app/data/teams.json"
 
 # Pobieranie tokena bezpośrednio ze zmiennych środowiskowych (Railway)
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -24,18 +24,18 @@ teams = {}
 sim_engine = SimulationEngine()
 
 def save_teams():
-    with open(TEAMS_DB, 'w', encoding='utf-8') as f:
+    with open(BAZA_DRUZYN, 'w', encoding='utf-8') as f:
         data = {name: team.to_dict() for name, team in teams.items()}
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 def load_teams():
     global teams
-    if os.path.exists(TEAMS_DB):
+    if os.path.exists(BAZA_DRUZYN):
         try:
-            with open(TEAMS_DB, 'r', encoding='utf-8') as f:
+            with open(BAZA_DRUZYN, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 teams = {name: Team.from_dict(team_data) for name, team_data in data.items()}
-            print(f"Loaded {len(teams)} teams from {TEAMS_DB}")
+            print(f"Loaded {len(teams)} teams from {BAZA_DRUZYN}")
         except Exception as e:
             print(f"Error loading teams: {e}")
             teams = {}
